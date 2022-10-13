@@ -36,6 +36,38 @@ const books = [
     { id: 8, name: 'Beyond the Shadows', authorId: 3 }
 ]
 
+const AuthorType = new GraphQLObjectType({
+    name: 'Author',
+    description: 'List of Authors',
+    fields : () => ({
+        id: {type: GraphQLNonNull(GraphQLInt)},
+        name: {type : GraphQLNonNull(GraphQLString)},
+        books:{
+            type: new GraphQLList(BookType),
+            resolve: (author) => {
+              return  books.filter(book => book.authorId === author.id)
+            }
+        }
+    })
+})
+
+const BookType = new GraphQLObjectType({
+    name: 'Book',
+    description: 'just description what can be done with books',
+    fields: () => ({
+        id : { type : GraphQLNonNull(GraphQLInt) },
+        name: { type : GraphQLNonNull(GraphQLString) },
+        authorId: { type: GraphQLNonNull(GraphQLString) },
+        author: {
+            type: AuthorType,
+            resolve: (book) => {
+              return  authors.find(author => author.id === book.authorId)
+
+            }
+        }
+    })
+})
+
 const rootQuery = new GraphQLObjectType({
     name: 'RootQuery',
     description: 'This is root query where all other queries will be formed from',
@@ -56,7 +88,7 @@ const rootQuery = new GraphQLObjectType({
             args: {
                 id: {type: GraphQLInt}
             },
-            resolve: (parent, args) => books.find((book) => book.id === args.id)
+            resolve: (parent, args) => books.find(book => book.id === args.id)
 
         },
         author: {
@@ -65,47 +97,13 @@ const rootQuery = new GraphQLObjectType({
             args: {
                 id: { type: GraphQLInt}
             },
-            resolve: (parent, args) => authors.find((author) => author.id === args.id)
+            resolve: (parent, args) => authors.find(author => author.id === args.id)
         },
     })
 })
 
-const AuthorType = new GraphQLObjectType({
-    name: 'Authors',
-    description: 'List of Authors',
-    fields : () => ({
-        id: {type: GraphQLNonNull(GraphQLInt)},
-        name: {type : GraphQLNonNull(GraphQLString)},
-        books:{
-            type: new GraphQLList(BookType),
-            description: 'List of books for that specific author',
-            resolve: (author) => {
-              return  books.filter(book => book.authorId === author.id)
-            }
-        }
-    })
-})
-
-const BookType = new GraphQLObjectType({
-    name: 'BookType',
-    description: 'just description what can be done with books',
-    fields: () => ({
-        id : { type : GraphQLNonNull(GraphQLInt) },
-        name: { type : GraphQLNonNull(GraphQLString) },
-        authorId: { type: GraphQLNonNull(GraphQLString) },
-        author: {
-            type: AuthorType,
-            description: 'List of Authors',
-            resolve: (book) => {
-              return  authors.find((author) => author.id === book.authorId)
-
-            }
-        }
-    })
-})
-
-const rootMutation = new GraphQLObjectType({
-    name: 'Mutation GraphQL',
+const RootMutationType = new GraphQLObjectType({
+    name: 'Mutation',
     description: 'root mutation',
     fields: () => ({
         addBook: {
@@ -118,7 +116,19 @@ const rootMutation = new GraphQLObjectType({
             resolve: (parent, args) => {
               const book = {id: books.length+1, name: args.name, authorId: args.authorId}
                 books.push(book);
-              return books;
+              return book
+            }
+        },
+        addAuthor: {
+            type: AuthorType,
+            description: 'Add a new Author',
+            args: {
+                name : {type: GraphQLNonNull(GraphQLString)}
+            },
+            resolve: (parent, args) => {
+                const author = {id: authors.length+1, name: args.name}
+                authors.push(author);
+                return author
             }
         }
     })
@@ -126,7 +136,7 @@ const rootMutation = new GraphQLObjectType({
 
 const schema = new GraphQLSchema({
     query: rootQuery,
-    mutation: rootMutation,
+    mutation: RootMutationType,
 })
 
 
